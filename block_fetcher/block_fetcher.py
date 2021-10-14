@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from typing import Dict, List, Tuple
 import certifi
 import requests
@@ -17,8 +18,8 @@ class BlockFetcher:
         self.latest_rpc_block_number = 0
         self.mongodb: MongoClient = None
         self.keys_transform_ignored = ["parentHash", "hash", "sha3Uncles", "stateRoot", "blockHash", "from", "to",
-                                       "miner", "extraData", "minHash", "receiptsRoot", "transactionsRoot",  "nonce"]
-        self.keys_ignored = ["logsBloom", "r", "s", "v"]
+                                       "miner", "extraData", "minHash", "receiptsRoot", "transactionsRoot",  "nonce", "blockHash"]
+        self.keys_ignored = ["logsBloom", "r", "s", "v", "input"]
 
     def __connect_db__(self):
         self.mongodb = MongoClient(self.db_endpoint, tlsCAFile=certifi.where())
@@ -53,10 +54,19 @@ class BlockFetcher:
         uncles = self.__fetch_uncles__(block['uncles'], block['hash'])
         transactions = block.pop("transactions")
 
+        for index, tx in enumerate(transactions):
+            transactions[index] = self.__normalize_dict__(tx)
+
         blocks.append(block)
         blocks += uncles
 
         return blocks, transactions
+
+    def remove_blocks(self):
+        db = self.mongodb.etd
+        block_col: Collection = db.blocks
+        block_col.delete_many({})
+
 
     def __normalize_dict__(self, data: Dict):
         items = list(data.items())
@@ -108,11 +118,18 @@ class BlockFetcher:
 
         if self.latest_db_block_number > self.latest_rpc_block_number:
             raise Exception("DB block number is greater than rpc")
+        number = 0
         for block_number in tqdm(range(self.latest_db_block_number + 1, self.latest_rpc_block_number)):
+            number += 1
+            if number % 10 == 0:
+                print(f"Fetching block {block_number}...")
             try:
                 blocks, transactions = self.__fetch_block__(block_number)
                 self.__insert_block__(blocks)
+                if len(transactions) > 0:
+                    self.__insert_transactions__(transactions)
             except Exception as e:
+                print(traceback.format_exc())
                 print(e)
 
 
