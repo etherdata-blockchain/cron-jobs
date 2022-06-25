@@ -23,8 +23,14 @@ class BlockFetcher:
 
     def __connect_db__(self):
         self.mongodb = MongoClient(self.db_endpoint, tlsCAFile=certifi.where())
-        collection = self.mongodb.etd.blocks
-        collection.create_index([("hash", 1)], unique=True)
+        block_collection = self.mongodb.etd.blocks
+        transaction_collection = self.mongodb.etd.transactions
+        try:
+            block_collection.create_index([("hash", 1)], unique=True)
+            transaction_collection.create_index([("hash", 1)], unique=True)
+        except Exception as e:
+            print(e)
+            print("Indexes already created")
 
     def __fetch_rpc_block_number__(self) -> int:
         data = {
