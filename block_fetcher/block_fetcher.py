@@ -82,7 +82,8 @@ class BlockFetcher:
     def __fetch_uncles__(self, uncles: List[str], block_hash: str):
         blocks = []
         for index, uncle_hash in enumerate(uncles):
-            data = {"jsonrpc": "2.0", "method": "eth_getUncleByBlockHashAndIndex", "params": [block_hash, hex(index)]}
+            data = {"jsonrpc": "2.0", "method": "eth_getUncleByBlockHashAndIndex", "params": [block_hash, hex(index)],
+                    "id": str(uuid.uuid4())}
             resp = requests.request("POST", self.url, json=data, headers=self.headers)
             resp_data: Dict = resp.json()['result']
             blocks.append(resp_data)
