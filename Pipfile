@@ -9,6 +9,9 @@ requests = "*"
 certifi = "*"
 dnspython = "*"
 tqdm = "*"
+httpretty = "*"
+mongomock = "*"
+pymongo-inmemory = "*"
 
 [dev-packages]
 
