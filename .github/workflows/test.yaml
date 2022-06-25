@@ -27,6 +27,34 @@ jobs:
       - name: Test with pytest
         run: |
           pytest
+
+  docker-service:
+    name: Build dockerized services
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: ["block_fetcher"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push ${{ matrix.app }}
+        uses: docker/build-push-action@v3
+        with:
+          context: ./
+          file: ./dockerfiles/${{ matrix.app }}.dockerfile
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
  
   create-release:
     runs-on: ubuntu-latest
