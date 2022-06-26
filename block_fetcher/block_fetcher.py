@@ -27,6 +27,8 @@ class BlockFetcher:
         transaction_collection = self.mongodb.etd.transactions
         try:
             block_collection.create_index([("hash", 1)], unique=True)
+            block_collection.create_index([("timeStamp", 1)])
+
             transaction_collection.create_index([("hash", 1)], unique=True)
         except Exception as e:
             print(e)
@@ -65,9 +67,13 @@ class BlockFetcher:
         resp = requests.request("POST", self.url, json=data, headers=self.headers)
         block: Dict = resp.json()['result']
         block["numberInBase10"] = int(block["number"], 16)
+        block["timestamp"] = int(block["timestamp"], 16)
         blocks = []
         uncles = self.__fetch_uncles__(block['uncles'], block['hash'])
         transactions = block.pop("transactions")
+        # add timestamp to transactions
+        for tx in transactions:
+            tx["timestamp"] = block["timestamp"]
 
         blocks.append(block)
         blocks += uncles
