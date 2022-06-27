@@ -92,6 +92,8 @@ class BlockFetcher:
                     "id": str(uuid.uuid4())}
             resp = requests.request("POST", self.url, json=data, headers=self.headers)
             resp_data: Dict = resp.json()['result']
+            resp_data["numberInBase10"] = int(resp_data["number"], 16)
+            resp_data["isUncle"] = True
             blocks.append(resp_data)
 
         return blocks
