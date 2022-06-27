@@ -28,6 +28,8 @@ class BlockFetcher:
         try:
             block_collection.create_index([("hash", 1)], unique=True)
             block_collection.create_index([("timeStamp", 1)])
+            block_collection.create_index([("numberInBase10", 1)])
+            block_collection.create_index([("isUncle", 1)])
 
             transaction_collection.create_index([("hash", 1)], unique=True)
         except Exception as e:
