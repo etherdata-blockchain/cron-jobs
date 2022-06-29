@@ -12,6 +12,7 @@ tqdm = "*"
 httpretty = "*"
 mongomock = "*"
 pymongo-inmemory = "*"
+web3 = "*"
 
 [dev-packages]
 
