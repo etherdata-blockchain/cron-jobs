@@ -67,7 +67,8 @@ class UserFetcher:
             address: str
             user: str = contract.functions.getUser(address).call()
             user_data = json.loads(user)
-            user_data["address"] = address.lower()
+            address = address.lower()
+            user_data["address"] = address
             users_col.update_one({"address": address}, {"$set": user_data}, upsert=True)
 
     def fetch(self):
