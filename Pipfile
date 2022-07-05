@@ -13,6 +13,7 @@ httpretty = "*"
 mongomock = "*"
 pymongo-inmemory = "*"
 web3 = "*"
+meilisearch = "*"
 
 [dev-packages]
 
