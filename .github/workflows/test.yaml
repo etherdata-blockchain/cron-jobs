@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: ["block_fetcher", "user_fetcher"]
+        app: ["block_fetcher", "user_fetcher", "meili_fetcher"]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Docker Buildx
