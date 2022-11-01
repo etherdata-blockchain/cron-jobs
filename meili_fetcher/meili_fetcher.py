@@ -26,25 +26,28 @@ class MeiliFetcher:
     def __connect_db__(self):
         self.mongodb = MongoClient(self.db_endpoint, tlsCAFile=certifi.where())
         self.meilisearch = Client(self.meilisearch_endpoint, api_key=self.meilisearch_master_key)
+        self.meilisearch.create_index("blocks", {'primaryKey': 'id'})
         self.blocks_col = self.mongodb.etd.blocks
 
     def add_to_meilisearch(self):
         self.__connect_db__()
+        batch_size = 200
+        self.__add_block_index__(batch_size)
+
+    def __add_block_index__(self, batch_size):
         end = self.blocks_col.count_documents({})
         start = self.meilisearch.index("blocks").get_stats()["numberOfDocuments"]
-        print(f"Start: {start}, End: {end}")
-        self.__add_to_meilisearch__(start, end)
 
-    def __add_to_meilisearch__(self, start: int, end: int):
-        batch_size = 1000
         for i in tqdm(range(start, end, batch_size)):
             blocks = self.blocks_col.find({}).skip(i).limit(batch_size)
-            blocks = loads(dumps(blocks))
-            for i in range(len(blocks)):
-                block = blocks[i]
+            old_blocks = loads(dumps(blocks))
+            new_blocks = []
+            for i in range(len(old_blocks)):
+                block = old_blocks[i]
                 block["_id"] = block["_id"]["$oid"]
-                blocks[i] = block
-            self.meilisearch.index("blocks").add_documents(blocks)
+                new_block = {"type": "block", "data": block, "_id": block["_id"]}
+                new_blocks.append(new_block)
+            self.meilisearch.index("blocks").add_documents(new_blocks)
 
 
 if __name__ == '__main__':
