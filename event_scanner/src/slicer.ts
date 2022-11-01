@@ -1,8 +1,11 @@
+import logger from "node-color-log";
+
 export class Slicer {
   batchSize: number;
 
-  constructor(batchSize: number) {
+  constructor(batchSize: number = 1000) {
     this.batchSize = batchSize;
+    logger.info(`Batch size: ${this.batchSize}`);
   }
 
   /**
