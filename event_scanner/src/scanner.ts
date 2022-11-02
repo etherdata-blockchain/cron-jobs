@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { FoundEvent } from "./EventFinder";
 
 interface Props {
   provider: ethers.providers.Provider;
@@ -7,14 +8,19 @@ interface Props {
 }
 
 interface Event {
-  blockNumber: number;
+  blockNumber: string;
   blockHash: string;
+  blockTimestamp: string;
   address: string;
-  transactionHash: string;
-  event: string;
-  data: {
-    [key: string]: any;
+  transaction: {
+    hash: string;
+    index: string;
+    from: string;
+    to: string;
+    value: string;
   };
+  event: string;
+  data: { name: string; value: string; indexed: boolean; type: string }[];
 }
 
 export class ContractScanner {
@@ -31,7 +37,7 @@ export class ContractScanner {
   /**
    * Scan the blockchain for events emitted by the contract.
    */
-  async scan(from: number, to: number, events: string[]): Promise<Event[]> {
+  async scan(from: number, to: number, events: FoundEvent[]): Promise<Event[]> {
     const contract = new ethers.Contract(
       this.contractAddress,
       this.abi,
@@ -41,11 +47,12 @@ export class ContractScanner {
     let scannedEvents: ethers.Event[] = [];
     for (const event of events) {
       scannedEvents = scannedEvents.concat(
-        await contract.queryFilter(event, from, to)
+        await contract.queryFilter(event.name, from, to)
       );
     }
 
     const returnedEvents: Event[] = [];
+    let index = 0;
     for (const event of scannedEvents) {
       const {
         blockNumber,
@@ -56,22 +63,48 @@ export class ContractScanner {
       } = event;
       const args: any = event.args || {};
 
-      // get args if key is not number
-      const parsedArgs = Object.keys(args).filter((key) => isNaN(Number(key)));
-      const filteredArgs = parsedArgs.map((key) => ({
-        name: key,
-        value: args[key],
-      }));
+      const block = await event.getBlock();
+      const transaction = await event.getTransaction();
+      const argsFiltered = this.filterArgs(events[index], args);
+
       returnedEvents.push({
-        blockNumber,
+        blockNumber: ethers.utils.hexValue(blockNumber),
         blockHash,
+        blockTimestamp: ethers.utils.hexValue(block.timestamp),
         address,
-        transactionHash,
+        transaction: {
+          hash: transactionHash,
+          index: ethers.utils.hexValue(event.transactionIndex),
+          from: transaction.from,
+          to: transaction.to!,
+          value: transaction.value._hex,
+        },
         event: name || "",
-        data: filteredArgs,
+        data: argsFiltered,
       });
     }
 
     return returnedEvents;
+  }
+
+  private filterArgs(foundEvent: FoundEvent, args: ethers.utils.Result): any {
+    const returnedArgs = [];
+    let index = 0;
+    for (const input of foundEvent.inputs) {
+      const { name, type, indexed } = input;
+      let value = args[index];
+      if (value._hex !== undefined) {
+        value = value._hex;
+      }
+
+      returnedArgs.push({
+        name,
+        type,
+        indexed,
+        value: value,
+      });
+      index++;
+    }
+    return returnedArgs;
   }
 }

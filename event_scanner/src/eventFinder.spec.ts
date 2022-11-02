@@ -1,4 +1,4 @@
-import { EventFinder } from "./eventFinder";
+import { EventFinder } from "./EventFinder";
 
 describe("Given a eventFinder", () => {
   it("should find all events", () => {
@@ -58,6 +58,47 @@ describe("Given a eventFinder", () => {
 
     const eventFinder = new EventFinder(abi);
     const events = eventFinder.findEvents();
-    expect(events).toEqual(["Approval", "Transfer"]);
+    expect(events).toStrictEqual([
+      {
+        name: "Approval",
+        inputs: [
+          {
+            name: "owner",
+            type: "address",
+            indexed: true,
+          },
+          {
+            name: "spender",
+            type: "address",
+            indexed: true,
+          },
+          {
+            name: "value",
+            type: "uint256",
+            indexed: false,
+          },
+        ],
+      },
+      {
+        name: "Transfer",
+        inputs: [
+          {
+            name: "from",
+            type: "address",
+            indexed: true,
+          },
+          {
+            name: "to",
+            type: "address",
+            indexed: true,
+          },
+          {
+            name: "value",
+            type: "uint256",
+            indexed: false,
+          },
+        ],
+      },
+    ]);
   });
 });

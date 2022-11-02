@@ -1,33 +1,57 @@
 import { ethers } from "ethers";
 import abi from "./abi.json";
-import { EventFinder } from "./eventFinder";
-import { ContractScanner } from "./scanner";
+import { EventFinder } from "./EventFinder";
+import { ContractScanner } from "./Scanner";
 import { Slicer } from "./slicer";
 import logger from "node-color-log";
+import dotenv from "dotenv";
+import { NetworkService } from "./NetworkService";
 
 const config = {
   // from env
-  batchSize: Number(process.env.BATCH_SIZE) || 1000,
+  batchSize: Number(process.env.BATCH_SIZE) || 100,
 };
 
+dotenv.config();
+
 (async () => {
-  const provider = new ethers.providers.JsonRpcProvider(
-    "http://localhost:7545"
-  );
+  let currentPage = 1;
+
+  const provider = new ethers.providers.JsonRpcProvider(process.env.endpoint!);
+  const signer = new ethers.Wallet(process.env.pk!);
+  const networkService = new NetworkService(process.env.url!, signer);
   const slicer = new Slicer(config.batchSize);
-  const scanner = new ContractScanner({
-    provider,
-    contractAddress: "0x86C05515d97FaF34E23bc031E49AE1F2742E077a",
-    abi,
-  });
-  const eventFinder = new EventFinder(abi);
+  await networkService.auth();
 
-  const start = 0;
-  const end = 4;
-  const events = eventFinder.findEvents();
+  while (true) {
+    try {
+      const contracts = await networkService.getContracts(currentPage);
+      if (contracts.items.length === 0) {
+        break;
+      }
 
-  await slicer.slice(start, end, async (start, end) => {
-    logger.info(`Scanning from ${start} to ${end}`);
-    const result = await scanner.scan(start, end, events);
-  });
+      for (const contract of contracts.items) {
+        logger.info(`Scanning ${contract.address}...`);
+        const scanner = new ContractScanner({
+          provider,
+          contractAddress: contract.address,
+          abi: contract.abi,
+        });
+        const eventFinder = new EventFinder(abi);
+
+        const start: number = contract.lastScannedBlock;
+        const end: number = await provider.getBlockNumber();
+        const events = eventFinder.findEvents();
+        await slicer.slice(start, end, async (start, end) => {
+          logger.info(`Scanning from ${start} to ${end}`);
+          const result = await scanner.scan(start, end, events);
+          logger.info(`Sending ${result.length} events`);
+          await networkService.uploadEvents(contract.address, result, end);
+        });
+      }
+    } catch (e) {
+      logger.error(e);
+    }
+    currentPage++;
+  }
 })();
