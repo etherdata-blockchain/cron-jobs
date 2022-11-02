@@ -1,5 +1,4 @@
 import { ethers } from "ethers";
-import abi from "./abi.json";
 import { EventFinder } from "./EventFinder";
 import { ContractScanner } from "./Scanner";
 import { Slicer } from "./slicer";
@@ -16,6 +15,13 @@ dotenv.config();
 
 (async () => {
   let currentPage = 1;
+  if (process.env.endpoint === undefined) {
+    throw new Error("endpoint is not defined");
+  }
+
+  if (process.env.pk === undefined) {
+    throw new Error("pk is not defined");
+  }
 
   const provider = new ethers.providers.JsonRpcProvider(process.env.endpoint!);
   const signer = new ethers.Wallet(process.env.pk!);
@@ -37,7 +43,7 @@ dotenv.config();
           contractAddress: contract.address,
           abi: contract.abi,
         });
-        const eventFinder = new EventFinder(abi);
+        const eventFinder = new EventFinder(contract.abi);
 
         const start: number = contract.lastScannedBlock;
         const end: number = await provider.getBlockNumber();
