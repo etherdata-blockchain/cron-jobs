@@ -1,4 +1,4 @@
-import { Slicer } from "./slicer";
+import { Slicer } from "./Slicer";
 
 describe("Given a Slicer", () => {
   it("should slice a range into batches", () => {

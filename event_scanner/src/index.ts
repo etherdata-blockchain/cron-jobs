@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { EventFinder } from "./EventFinder";
 import { ContractScanner } from "./Scanner";
-import { Slicer } from "./slicer";
+import { Slicer } from "./Slicer";
 import logger from "node-color-log";
 import dotenv from "dotenv";
 import { NetworkService } from "./NetworkService";
