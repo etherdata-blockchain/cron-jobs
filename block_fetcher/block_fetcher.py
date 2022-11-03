@@ -1,18 +1,21 @@
 import asyncio
+import logging
 import os
 import random
+import sys
 import traceback
 import uuid
 from typing import Dict, List, Tuple
 
 import certifi
 import httpx
-import requests
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from tqdm import tqdm
 
 from contract import Contract
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class BlockFetcher:
@@ -180,7 +183,7 @@ class BlockFetcher:
         await self.__connect_db__()
         self.start_block_number = await self.__fetch_db_block_number__() if not self.should_start_from_beginning else 0
         self.end_block_number = await self.__fetch_rpc_block_number__()
-        print(
+        logging.info(
             f"Start Block Number: {self.start_block_number}, "
             f"End Block Number: {self.end_block_number}")
 
@@ -196,10 +199,11 @@ class BlockFetcher:
                         await self.__process_transactions__(transactions)
                         await self.__insert_transactions__(transactions)
                 except Exception as e:
-                    print(traceback.format_exc())
-                    print(e)
+                    logging.error(traceback.format_exc())
+                    logging.error(e)
 
             # put jobs into a list
+            logging.info(f"Fetching block: {block_number}")
             await asyncio.gather(*[fetch(block_number + i) for i in range(self.batch_size)])
 
 
