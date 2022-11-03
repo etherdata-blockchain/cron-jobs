@@ -15,6 +15,9 @@ export class EventFinder {
 
   findEvents(): FoundEvent[] {
     const events: FoundEvent[] = [];
+    if (this.abi === undefined) {
+      return events;
+    }
     for (const item of this.abi) {
       if (item.type === "event") {
         events.push({
