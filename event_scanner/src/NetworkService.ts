@@ -12,7 +12,7 @@ interface Page<T> {
 
 interface Contract {
   source: string;
-  abi: string;
+  abi?: string;
   bytecode: string;
   compiler: string;
   address: string;
@@ -42,11 +42,14 @@ export class NetworkService {
   }
 
   async getContracts(page: number = 1): Promise<Page<Contract>> {
-    const response = await axios.get(`${this.url}/contract?page=${page}`, {
-      headers: {
-        Authorization: `Bearer ${this.authenticationToken}`,
-      },
-    });
+    const response = await axios.get(
+      `${this.url}/contract?page=${page}&showAbi=true`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.authenticationToken}`,
+        },
+      }
+    );
     return response.data;
   }
 

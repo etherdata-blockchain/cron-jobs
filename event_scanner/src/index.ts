@@ -43,11 +43,17 @@ dotenv.config();
           contractAddress: contract.address,
           abi: contract.abi,
         });
+
+        if (contract.abi === undefined) {
+          logger.warn("Skipping contract without ABI");
+          continue;
+        }
         const eventFinder = new EventFinder(contract.abi);
 
         const start: number = contract.lastScannedBlock;
         const end: number = await provider.getBlockNumber();
         const events = eventFinder.findEvents();
+
         await slicer.slice(start, end, async (start, end) => {
           logger.info(`Scanning from ${start} to ${end}`);
           const result = await scanner.scan(start, end, events);

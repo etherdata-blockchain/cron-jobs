@@ -50,7 +50,6 @@ export class ContractScanner {
         await contract.queryFilter(event.name, from, to)
       );
     }
-
     const returnedEvents: Event[] = [];
     let index = 0;
     for (const event of scannedEvents) {
