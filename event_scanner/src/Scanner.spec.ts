@@ -10,4 +10,13 @@ describe("Given a scanner", () => {
     });
     expect(scanner.scan(0, 1, [])).resolves.toEqual([]);
   });
+
+  it("Should skip the contract", () => {
+    const scanner = new ContractScanner({
+      provider: new ethers.providers.JsonRpcProvider(""),
+      contractAddress: "0x123",
+      abi: null,
+    });
+    expect(scanner.scan(0, 1, [])).resolves.toEqual([]);
+  });
 });

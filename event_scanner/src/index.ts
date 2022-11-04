@@ -39,16 +39,15 @@ dotenv.config();
 
       for (const contract of contracts.items) {
         logger.info(`Scanning ${contract.address}...`);
+        if (contract.abi === undefined || contract.abi === null) {
+          logger.warn("Skipping contract without ABI");
+          continue;
+        }
         const scanner = new ContractScanner({
           provider,
           contractAddress: contract.address,
           abi: contract.abi,
         });
-
-        if (contract.abi === undefined) {
-          logger.warn("Skipping contract without ABI");
-          continue;
-        }
         const eventFinder = new EventFinder(contract.abi);
 
         const start: number = contract.lastScannedBlock;
