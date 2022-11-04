@@ -28,6 +28,7 @@ dotenv.config();
   const networkService = new NetworkService(process.env.url!, signer);
   const slicer = new Slicer(config.batchSize);
   await networkService.auth();
+  let retry = 0;
 
   while (true) {
     try {
@@ -60,10 +61,17 @@ dotenv.config();
           logger.info(`Sending ${result.length} events`);
           await networkService.uploadEvents(contract.address, result, end);
         });
+        retry = 0;
       }
     } catch (e) {
       logger.error(e);
+      retry++;
     }
+    if (retry > 5) {
+      logger.error("Too many retries, exiting");
+      break;
+    }
+
     currentPage++;
   }
 })();

@@ -38,6 +38,10 @@ export class ContractScanner {
    * Scan the blockchain for events emitted by the contract.
    */
   async scan(from: number, to: number, events: FoundEvent[]): Promise<Event[]> {
+    if (this.abi === undefined) {
+      return [];
+    }
+
     const contract = new ethers.Contract(
       this.contractAddress,
       this.abi,
