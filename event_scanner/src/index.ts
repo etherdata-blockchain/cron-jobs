@@ -28,6 +28,7 @@ dotenv.config();
   const networkService = new NetworkService(process.env.url!, signer);
   const slicer = new Slicer(config.batchSize);
   await networkService.auth();
+  let retry = 0;
 
   while (true) {
     try {
@@ -38,16 +39,15 @@ dotenv.config();
 
       for (const contract of contracts.items) {
         logger.info(`Scanning ${contract.address}...`);
+        if (contract.abi === undefined || contract.abi === null) {
+          logger.warn("Skipping contract without ABI");
+          continue;
+        }
         const scanner = new ContractScanner({
           provider,
           contractAddress: contract.address,
           abi: contract.abi,
         });
-
-        if (contract.abi === undefined) {
-          logger.warn("Skipping contract without ABI");
-          continue;
-        }
         const eventFinder = new EventFinder(contract.abi);
 
         const start: number = contract.lastScannedBlock;
@@ -60,10 +60,17 @@ dotenv.config();
           logger.info(`Sending ${result.length} events`);
           await networkService.uploadEvents(contract.address, result, end);
         });
+        retry = 0;
       }
     } catch (e) {
       logger.error(e);
+      retry++;
     }
+    if (retry > 5) {
+      logger.error("Too many retries, exiting");
+      break;
+    }
+
     currentPage++;
   }
 })();

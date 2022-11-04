@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ethers, logger } from "ethers";
 import { FoundEvent } from "./EventFinder";
 
 interface Props {
@@ -38,6 +38,11 @@ export class ContractScanner {
    * Scan the blockchain for events emitted by the contract.
    */
   async scan(from: number, to: number, events: FoundEvent[]): Promise<Event[]> {
+    if (this.abi === undefined || this.abi === null) {
+      logger.warn("Skipping contract without ABI");
+      return [];
+    }
+
     const contract = new ethers.Contract(
       this.contractAddress,
       this.abi,
