@@ -105,7 +105,8 @@ class BlockFetcher:
 
         return blocks, transactions
 
-    async def __fetch_contract__(self, block_hash: str, transaction_address: str, byte_code: str) -> Contract:
+    async def __fetch_contract__(self, block_hash: str, transaction_address: str, byte_code: str, block_number: str,
+                                 block_time: str) -> Contract:
         """
         Fetch contract using block hash and transaction address
         :param block_hash:
@@ -125,14 +126,16 @@ class BlockFetcher:
         contract_address = resp_data['contractAddress']
         creator_address = resp_data['from']
         contract = Contract(creator=creator_address, address=contract_address, block_hash=block_hash,
-                            byte_code=byte_code, transaction_hash=transaction_address)
+                            byte_code=byte_code, transaction_hash=transaction_address, block_number=block_number,
+                            block_time=block_time)
         return contract
 
-    async def __process_transactions__(self, transactions: List[Dict]):
+    async def __process_transactions__(self, transactions: List[Dict], block: Dict):
         for tx in transactions:
             if tx['to'] is None:
                 # contract creation
-                contract = await self.__fetch_contract__(tx['blockHash'], tx['hash'], tx['input'])
+                contract = await self.__fetch_contract__(tx['blockHash'], tx['hash'], tx['input'], block['number'],
+                                                         block['timestamp'])
                 await self.__insert_contract__(contract)
 
     async def remove_blocks(self):
@@ -190,13 +193,13 @@ class BlockFetcher:
         if self.start_block_number > self.end_block_number:
             raise Exception("DB block number is greater than rpc")
 
-        for block_number in tqdm(range(self.start_block_number + 1, self.end_block_number, self.batch_size)):
+        for block_number in tqdm(range(self.start_block_number + 1, self.end_block_number + 1, self.batch_size)):
             async def fetch(at_block_number):
                 try:
                     blocks, transactions = await self.__fetch_block__(at_block_number)
                     await self.__insert_block__(blocks)
                     if len(transactions) > 0:
-                        await self.__process_transactions__(transactions)
+                        await self.__process_transactions__(transactions, blocks[0])
                         await self.__insert_transactions__(transactions)
                 except Exception as e:
                     logging.error(traceback.format_exc())
@@ -204,7 +207,8 @@ class BlockFetcher:
 
             # put jobs into a list
             logging.info(f"Fetching block: {block_number}")
-            await asyncio.gather(*[fetch(block_number + i) for i in range(self.batch_size)])
+            await asyncio.gather(
+                *[fetch(block_number + i) for i in range(self.batch_size) if i + block_number <= self.end_block_number])
 
 
 async def main():

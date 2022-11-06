@@ -5,29 +5,42 @@ import { Slicer } from "./Slicer";
 import logger from "node-color-log";
 import dotenv from "dotenv";
 import { NetworkService } from "./NetworkService";
-
-const config = {
-  // from env
-  batchSize: Number(process.env.BATCH_SIZE) || 100,
-};
+import { erc20, erc721, erc777, erc1155 } from "./abi";
+import { ABIMerger } from "./ABIMerger";
 
 dotenv.config();
 
 (async () => {
+  const config = {
+    // from env
+    batchSize: Number(process.env.BATCH_SIZE) || 1000,
+    rpc: process.env.endpoint,
+    pk: process.env.pk,
+  };
+
   let currentPage = 1;
-  if (process.env.endpoint === undefined) {
+  if (config.rpc === undefined) {
     throw new Error("endpoint is not defined");
   }
 
-  if (process.env.pk === undefined) {
+  if (config.pk === undefined) {
     throw new Error("pk is not defined");
   }
 
-  const provider = new ethers.providers.JsonRpcProvider(process.env.endpoint!);
-  const signer = new ethers.Wallet(process.env.pk!);
+  // web3
+  const provider = new ethers.providers.JsonRpcProvider(config.rpc);
+  const signer = new ethers.Wallet(config.pk!);
+  // server
   const networkService = new NetworkService(process.env.url!, signer);
+  // helper
   const slicer = new Slicer(config.batchSize);
+  const abiMerger = new ABIMerger([erc20, erc721, erc777, erc1155]);
+
+  // login to the server
   await networkService.auth();
+  // merge abi. This is the default abi for those contracts that do provide an abi
+  const mergedABI = abiMerger.merge();
+
   let retry = 0;
 
   while (true) {
@@ -38,10 +51,10 @@ dotenv.config();
       }
 
       for (const contract of contracts.items) {
-        logger.info(`Scanning ${contract.address}...`);
+        logger.success(`Scanning ${contract.address}...`);
         if (contract.abi === undefined || contract.abi === null) {
-          logger.warn("Skipping contract without ABI");
-          continue;
+          logger.warn("Contract without ABI, using default ABI");
+          contract.abi = mergedABI;
         }
         const scanner = new ContractScanner({
           provider,
