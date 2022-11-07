@@ -17,6 +17,7 @@ interface Contract {
   compiler: string;
   address: string;
   lastScannedBlock: number;
+  blockNumber: string;
 }
 
 export class NetworkService {

@@ -63,7 +63,13 @@ dotenv.config();
         });
         const eventFinder = new EventFinder(contract.abi);
 
-        const start: number = contract.lastScannedBlock;
+        // start scanning using block number if last scanned block is less than contract's block number
+        const blockNumber = Number(contract.blockNumber);
+
+        const start: number =
+          contract.lastScannedBlock < blockNumber
+            ? blockNumber
+            : contract.lastScannedBlock;
         const end: number = await provider.getBlockNumber();
         const events = eventFinder.findEvents();
 
