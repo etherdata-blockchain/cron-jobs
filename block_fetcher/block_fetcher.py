@@ -105,7 +105,17 @@ class BlockFetcher:
 
         return blocks, transactions
 
-    async def __fetch_contract__(self, block_hash: str, transaction_address: str, byte_code: str, block_number: str,
+    async def __get_code__(self, contract_address: str) -> str:
+        data = {
+            "jsonrpc": "2.0",
+            "method": "eth_getCode",
+            "params": [contract_address, "latest"],
+            "id": str(uuid.uuid4())
+        }
+        resp = await httpx.AsyncClient().post(self.url, headers=self.headers, json=data)
+        return resp.json()['result']
+
+    async def __fetch_contract__(self, block_hash: str, transaction_address: str, block_number: str,
                                  block_time: str) -> Contract:
         """
         Fetch contract using block hash and transaction address
@@ -125,6 +135,8 @@ class BlockFetcher:
         resp_data = response.json()['result']
         contract_address = resp_data['contractAddress']
         creator_address = resp_data['from']
+        byte_code = await self.__get_code__(contract_address)
+
         contract = Contract(creator=creator_address, address=contract_address, block_hash=block_hash,
                             byte_code=byte_code, transaction_hash=transaction_address, block_number=block_number,
                             block_time=block_time)
@@ -134,7 +146,7 @@ class BlockFetcher:
         for tx in transactions:
             if tx['to'] is None:
                 # contract creation
-                contract = await self.__fetch_contract__(tx['blockHash'], tx['hash'], tx['input'], block['number'],
+                contract = await self.__fetch_contract__(tx['blockHash'], tx['hash'], block['number'],
                                                          block['timestamp'])
                 await self.__insert_contract__(contract)
 
