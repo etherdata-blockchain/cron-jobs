@@ -34,7 +34,7 @@ dotenv.config();
   const networkService = new NetworkService(process.env.url!, signer);
   // helper
   const slicer = new Slicer(config.batchSize);
-  const abiMerger = new ABIMerger([erc20, erc721, erc777, erc1155]);
+  const abiMerger = new ABIMerger([erc721, erc777, erc1155, erc20]);
 
   // login to the server
   await networkService.auth();
