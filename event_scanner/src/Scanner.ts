@@ -1,4 +1,5 @@
-import { ethers, logger } from "ethers";
+import { ethers } from "ethers";
+import logger from "node-color-log";
 import { FoundEvent } from "./EventFinder";
 
 interface Props {
@@ -42,13 +43,11 @@ export class ContractScanner {
       logger.warn("Skipping contract without ABI");
       return [];
     }
-
     const contract = new ethers.Contract(
       this.contractAddress,
       this.abi,
       this.provider
     );
-
     let scannedEvents: ethers.Event[] = [];
     for (const event of events) {
       scannedEvents = scannedEvents.concat(
@@ -66,7 +65,6 @@ export class ContractScanner {
         event: name,
       } = event;
       const args: any = event.args || {};
-
       const block = await event.getBlock();
       const transaction = await event.getTransaction();
       const argsFiltered = this.filterArgs(events[index], args);
@@ -94,13 +92,16 @@ export class ContractScanner {
   private filterArgs(foundEvent: FoundEvent, args: ethers.utils.Result): any {
     const returnedArgs = [];
     let index = 0;
+    if (Object.keys(args).length === 0) {
+      logger.error("No args found");
+      return [];
+    }
     for (const input of foundEvent.inputs) {
       const { name, type, indexed } = input;
       let value = args[index];
       if (value._hex !== undefined) {
         value = value._hex;
       }
-
       returnedArgs.push({
         name,
         type,

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ethers } from "ethers";
+import logger from "node-color-log";
 
 interface Page<T> {
   items: T[];
@@ -63,10 +64,16 @@ export class NetworkService {
       lastScannedBlock,
       events,
     };
-    await axios.post(`${this.url}/event/${contractAddress}`, data, {
-      headers: {
-        Authorization: `Bearer ${this.authenticationToken}`,
-      },
-    });
+    try {
+      await axios.post(`${this.url}/event/${contractAddress}`, data, {
+        headers: {
+          Authorization: `Bearer ${this.authenticationToken}`,
+        },
+      });
+    } catch (e: any) {
+      logger.error(
+        `Unable to upload events for contract ${contractAddress} due to ${e}`
+      );
+    }
   }
 }
