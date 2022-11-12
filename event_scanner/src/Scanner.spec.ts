@@ -90,7 +90,7 @@ describe("Given a scanner", () => {
     });
     const results = await scanner.scan(0, 1);
     expect(ethers.Contract).toBeCalledTimes(2);
-    expect(results).toHaveLength(13);
+    expect(results).toHaveLength(1);
   });
 
   it("Should scan the contract without abis", async () => {
@@ -102,6 +102,6 @@ describe("Given a scanner", () => {
     });
     const results = await scanner.scan(0, 1);
     expect(ethers.Contract).toBeCalledTimes(4);
-    expect(results).toHaveLength(78);
+    expect(results).toHaveLength(1);
   });
 });
