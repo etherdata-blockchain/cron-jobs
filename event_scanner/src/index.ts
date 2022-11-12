@@ -1,11 +1,9 @@
+import dotenv from "dotenv";
 import { ethers } from "ethers";
-import { EventFinder } from "./EventFinder";
+import logger from "node-color-log";
+import { NetworkService } from "./NetworkService";
 import { ContractScanner } from "./Scanner";
 import { Slicer } from "./Slicer";
-import logger from "node-color-log";
-import dotenv from "dotenv";
-import { NetworkService } from "./NetworkService";
-import { erc20, erc721, erc777, erc1155 } from "./abi";
 
 dotenv.config();
 
@@ -64,7 +62,9 @@ dotenv.config();
         const blockNumber = Number(contract.blockNumber);
 
         const start: number =
-          contract.lastScannedBlock;
+          blockNumber < contract.lastScannedBlock
+            ? contract.lastScannedBlock
+            : blockNumber - 1;
         const end: number = await provider.getBlockNumber();
 
         await slicer.slice(start, end, async (start, end) => {
@@ -76,7 +76,6 @@ dotenv.config();
               ""
             )}`
           );
-
           await networkService.uploadEvents(contract.address, result, end);
         });
         retry = 0;

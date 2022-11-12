@@ -106,7 +106,7 @@ export class ContractScanner {
       }
     }
 
-    return returnedEvents;
+    return this.findUniqueEvents(returnedEvents);
   }
 
   private filterArgs(foundEvent: FoundEvent, args: ethers.utils.Result): any[] {
@@ -135,5 +135,20 @@ export class ContractScanner {
       index++;
     }
     return returnedArgs;
+  }
+
+  private findUniqueEvents(events: Event[]): Event[] {
+    const uniqueEvents: Event[] = [];
+    for (const event of events) {
+      const found = uniqueEvents.find(
+        (e) =>
+          e.transaction.hash === event.transaction.hash &&
+          e.event === event.event
+      );
+      if (found === undefined) {
+        uniqueEvents.push(event);
+      }
+    }
+    return uniqueEvents;
   }
 }
