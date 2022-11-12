@@ -6,7 +6,6 @@ import logger from "node-color-log";
 import dotenv from "dotenv";
 import { NetworkService } from "./NetworkService";
 import { erc20, erc721, erc777, erc1155 } from "./abi";
-import { ABIMerger } from "./ABIMerger";
 
 dotenv.config();
 
@@ -34,12 +33,10 @@ dotenv.config();
   const networkService = new NetworkService(process.env.url!, signer);
   // helper
   const slicer = new Slicer(config.batchSize);
-  const abiMerger = new ABIMerger([erc721, erc777, erc1155, erc20]);
 
   // login to the server
   await networkService.auth();
   // merge abi. This is the default abi for those contracts that do provide an abi
-  const mergedABI = abiMerger.merge();
 
   let retry = 0;
 
@@ -52,31 +49,34 @@ dotenv.config();
 
       for (const contract of contracts.items) {
         logger.success(`Scanning ${contract.address}...`);
-        if (contract.abi === undefined || contract.abi === null) {
-          logger.warn("Contract without ABI, using default ABI");
-          contract.abi = mergedABI;
+        let abi: any[] = [];
+        if (contract.abi) {
+          abi = [contract.abi!];
         }
+
         const scanner = new ContractScanner({
           provider,
           contractAddress: contract.address,
-          abi: contract.abi,
+          abis: abi,
         });
-        const eventFinder = new EventFinder(contract.abi);
 
         // start scanning using block number if last scanned block is less than contract's block number
         const blockNumber = Number(contract.blockNumber);
 
         const start: number =
-          contract.lastScannedBlock < blockNumber
-            ? blockNumber
-            : contract.lastScannedBlock;
+          contract.lastScannedBlock;
         const end: number = await provider.getBlockNumber();
-        const events = eventFinder.findEvents();
 
         await slicer.slice(start, end, async (start, end) => {
           logger.info(`Scanning from ${start} to ${end}`);
-          const result = await scanner.scan(start, end, events);
-          logger.info(`Sending ${result.length} events`);
+          const result = await scanner.scan(start, end);
+          logger.info(
+            `Sending ${result.length} events ${result.reduce(
+              (acc, curr) => acc + "," + curr.event,
+              ""
+            )}`
+          );
+
           await networkService.uploadEvents(contract.address, result, end);
         });
         retry = 0;

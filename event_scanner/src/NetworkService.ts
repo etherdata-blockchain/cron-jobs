@@ -13,7 +13,7 @@ interface Page<T> {
 
 interface Contract {
   source: string;
-  abi?: string;
+  abi?: { [key: string]: any }[];
   bytecode: string;
   compiler: string;
   address: string;
