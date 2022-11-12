@@ -64,9 +64,7 @@ dotenv.config();
         const blockNumber = Number(contract.blockNumber);
 
         const start: number =
-          contract.lastScannedBlock < blockNumber
-            ? blockNumber
-            : contract.lastScannedBlock;
+          contract.lastScannedBlock;
         const end: number = await provider.getBlockNumber();
 
         await slicer.slice(start, end, async (start, end) => {
