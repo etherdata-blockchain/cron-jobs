@@ -30,6 +30,6 @@ jobs:
           file: ./dockerfiles/${{ matrix.app }}.dockerfile
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository }}/${{ matrix.app }}:${{ github.event.release.tag_name }}
+          tags: ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
