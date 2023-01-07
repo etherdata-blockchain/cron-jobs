@@ -80,33 +80,35 @@ export class ContractScanner {
         }
         const block = await event.getBlock();
         const transaction = await event.getTransaction();
-
-        for (const foundEvent of events) {
-          const argsFiltered = this.filterArgs(foundEvent, args);
-          if (argsFiltered.length === 0) {
-            continue;
-          }
-
-          returnedEvents.push({
-            blockNumber: ethers.utils.hexValue(blockNumber),
-            blockHash,
-            blockTimestamp: ethers.utils.hexValue(block.timestamp),
-            address,
-            transaction: {
-              hash: transactionHash,
-              index: ethers.utils.hexValue(event.transactionIndex),
-              from: transaction.from,
-              to: transaction.to!,
-              value: transaction.value._hex,
-            },
-            event: name || "",
-            data: argsFiltered,
-          });
-        }
+        const foundEvent = this.findEventByName(events, name!);
+        const argsFiltered = this.filterArgs(foundEvent, args);
+        returnedEvents.push({
+          blockNumber: ethers.utils.hexValue(blockNumber),
+          blockHash,
+          blockTimestamp: ethers.utils.hexValue(block.timestamp),
+          address,
+          transaction: {
+            hash: transactionHash,
+            index: ethers.utils.hexValue(event.transactionIndex),
+            from: transaction.from,
+            to: transaction.to!,
+            value: transaction.value._hex,
+          },
+          event: name || "",
+          data: argsFiltered,
+        });
       }
     }
 
     return this.findUniqueEvents(returnedEvents);
+  }
+
+  private findEventByName(foundEvents: FoundEvent[], name: string): FoundEvent {
+    const found = foundEvents.find((e) => e.name === name);
+    if (found === undefined) {
+      throw new Error(`Event ${name} not found`);
+    }
+    return found;
   }
 
   private filterArgs(foundEvent: FoundEvent, args: ethers.utils.Result): any[] {
