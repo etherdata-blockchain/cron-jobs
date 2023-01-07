@@ -13,7 +13,7 @@ jobs:
       matrix:
         app: ["block_fetcher", "user_fetcher", "meili_fetcher", "event_scanner"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
