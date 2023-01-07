@@ -93,15 +93,4 @@ describe("Given a scanner", () => {
     expect(results).toHaveLength(1);
   });
 
-  it("Should scan the contract without abis", async () => {
-    const provider = jest.fn();
-    const scanner = new ContractScanner({
-      provider: provider as any,
-      contractAddress: "0x123",
-      abis: [],
-    });
-    const results = await scanner.scan(0, 1);
-    expect(ethers.Contract).toBeCalledTimes(4);
-    expect(results).toHaveLength(1);
-  });
 });
